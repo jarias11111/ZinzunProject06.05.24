@@ -1,0 +1,6 @@
+{
+    "id_desarrollador":"Objetid()",
+    "id_reclutador":"Objetid()",
+    "calificacion":"int",
+    "comentarios":"String"
+}

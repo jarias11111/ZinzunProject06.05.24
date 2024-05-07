@@ -1,0 +1,16 @@
+{
+  "id_formacion": "Objetid()",
+  "id_desarroador": "Objetid()",
+  "nombre": "String",
+  "evidencia": "String",
+  "fecha_inicio": "date",
+  "fecha_terminacion": "date",
+  "estatus": "String",
+  "tipo": "String",
+  "centro_formador": {
+    "nombre": "String",
+    "Telefono": "String",
+    "Correo": "Email",
+    "Tipo": "String"
+  }
+}

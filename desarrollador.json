@@ -1,0 +1,32 @@
+{
+  "id_usuario": "Objetid()",
+  "nombre_completo": "String",
+  "empresa_reclutador": "String",
+  "empresa_giro": "String",
+  "cargo": "String",
+  "telefono": "int",
+  "estatus": "char",
+  "email": "String",
+  "calle": "String",
+  "num_int": "int",
+  "num_ext": "int",
+  "cp": "String",
+  "region":"Objetid()",
+  "herramientas": [
+    {
+      "id_herramienta":"Objetid()",
+      "nivel":"String"
+    }
+  ],
+  "disponibilidad": [
+    {
+      "tipo": "String",
+      "preferencias": {
+        "dias":"String",
+        "tiempo":"String",
+        "horario":"String"
+      },
+      "favorita":"Boolean"
+    }
+  ]
+}
