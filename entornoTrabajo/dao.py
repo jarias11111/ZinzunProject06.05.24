@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from models import UsuarioInsert, UsuarioInactivo, AgregarHerramienta, Herramienta1, HerramientaConsulta, Usuario
+from models import UsuarioInsert, UsuarioInactivo, AgregarHerramienta, Herramienta1, Usuario, UsuarioUpdate
 from datetime import datetime
 from bson import ObjectId
 
@@ -13,7 +13,7 @@ class Conexion():
     def cerrar(self):
         self.cliente.close()
 
-#1
+#1  AGREGAR USUARIO
     def agregarUsuario(self,usuario:UsuarioInsert):
         respuesta={"estatus":"","mensaje":""}
         if usuario:
@@ -26,9 +26,9 @@ class Conexion():
                     respuesta["mensaje"]="El Usuario no se agregó"
         return respuesta
 
-#2    
+#2  ELIMINAR USUARIO
     def comprobarUsuario(self,idUsuario):
-        filtro = {"_id": ObjectId(idUsuario), "$or": [{"estatus": "RECLUTAMIENTO Y SELECCION"}, {"estatus": "A"}]}
+        filtro = {"_id": ObjectId(idUsuario), "estatus": 'A'}
         usuario = self.bd.desarrollador.find_one(filtro)
         return usuario
     
@@ -46,8 +46,67 @@ class Conexion():
             resp["estatus"]="Error"
             resp["mensaje"]="El usuario no se ha cancelado."
         return  resp
+    
+    # def comprobarUsuario(self,idUsuario):
+    #     if isinstance(idUsuario, int):
+    #         filtro = {"_id": idUsuario, "estatus": 'A'}
+    #     elif isinstance(idUsuario, str):
+    #         if idUsuario.isdigit():  
+    #             filtro = {"_id": int(idUsuario), "estatus": 'A'}
+    #         else:
+    #             raise ValueError("El idUsuario no es válido. Debe ser un entero o una cadena de dígitos.")
+    #     else:
+    #         raise ValueError("El idUsuario debe ser de tipo entero o cadena de dígitos")
+    #     usuario = self.bd.desarrollador.find_one(filtro)
+    #     return usuario
+    
+    # def cancelarUsuario(self, idUsuario, cancelacion: UsuarioInactivo): 
+    #     if isinstance(idUsuario, ObjectId):
+    #         usuario = self.comprobarUsuario(idUsuario)
+    #     elif isinstance(idUsuario, int):
+    #         usuario = self.comprobarUsuario(ObjectId(str(idUsuario)))
+    #     else:
+    #         raise ValueError("El idUsuario debe ser un ObjectId o un entero")
+    #     resp = {"estatus": "", "mensaje": ""}
+    #     if usuario:
+    #         self.bd.desarrollador.update_one(
+    #             {"_id": idUsuario},
+    #             {"$set": {"estatus": "INACTIVO"}}
+    #         )
+    #         resp["estatus"] = "Ok"
+    #         resp["mensaje"] = f"Usuario desactivado con id: {idUsuario}"  
+    #     else:
+    #         resp["estatus"] = "Error"
+    #         resp["mensaje"] = "El usuario no se ha cancelado."
+    #     return resp
 
-#3
+#3.1MODIFICAR USUARIO 
+    def comprobarUsuario2(self,idUsuario):
+        usuario=self.bd.desarrollador.find_one({"_id":ObjectId(idUsuario),
+                                         "$or": [{"estatus": "INACTIVO"}, {"estatus": "A"}]})
+        return usuario
+    
+    def modificarUsuario(self,idUsuario,modificar:UsuarioUpdate):
+        user=self.comprobarUsuario2(idUsuario)
+        resp={"estatus":"","mensaje":""}
+        if user: 
+            self.bd.desarrollador.update_one(
+                    {"_id": ObjectId(idUsuario)},
+                    {"$set": {"estatus": "A",
+                              "telefono":modificar.telefono,
+                              "email":modificar.email,
+                              "calle":modificar.calle,
+                              "num_int":modificar.num_int,
+                              "num_ext":modificar.num_ext}}
+            )
+            resp["estatus"]="Ok"
+            resp["mensaje"]=f"Usuario modificado en datos generales con id:{idUsuario}"  
+        else:
+            resp["estatus"]="Error"
+            resp["mensaje"]="El usuario no se ha modificado ."
+        return  resp
+
+#3  MODIFICAR USAURIO POR HERRMIENTA
     def comprobarUsuario1(self,idUsuario):
         usuario=self.bd.desarrollador.find_one({"_id":int(idUsuario),
                                          "$or": [{"estatus": "INACTIVO"}, {"estatus": "A"}]})
@@ -76,8 +135,7 @@ class Conexion():
                 resp["mensaje"]='No existe la Herramienta.'
         return resp
     
-    #4
-
+#4  CONSULTA DE USUARIOS POR HERRAMIENTA
     def consultaGeneralHerramientas(self):
         resp={"estatus":"","mensaje":""}
         resp["estatus"]="OK"
