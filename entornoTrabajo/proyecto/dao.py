@@ -1,5 +1,5 @@
 from pymongo import MongoClient,ReturnDocument
-from models import RegionInsert,FavoritosInsert, HerramientasInsert
+from models import RegionInsert,FavoritosInsert, HerramientasInsert, certificaciones
 from datetime import datetime
 from bson import ObjectId,DatetimeConversion
 from time import strftime
@@ -11,59 +11,72 @@ class Conexion():
     def cerrar(self):
         self.cliente.close()
 #-------------------REGION---------------------------#
-    def agregarRegion(self,region:RegionInsert):
-        respuesta={"estatus":"","mensaje":""}
-        if region:
-                    res=self.bd.region.insert_one(region.dict())
-                    respuesta["estatus"]="OK"
-                    respuesta["mensaje"]="Usuario agregado con id"
-                    respuesta["Usuario"]=region
-        else:
-                    respuesta["estatus"]="Error"
-                    respuesta["mensaje"]="El Usuario no se agregó"
-        return respuesta
-    
+    def agregarRegion(self, region: RegionInsert, _id: int):
+            region_dict = region.dict()
+            region_dict["_id"] = _id
+            result = self.bd.region.insert_one(region_dict)
+            salida = {
+                "estatus": "OK",
+                "mensaje": f"region registrada con id {result.inserted_id}"
+            }
+            return salida
+        
     def consultarRegion(self, id_region: str):
-        id_object = ObjectId(id_region)
-        region = self.bd.region.find_one({"_id": id_object})
+        region = self.bd.region.find_one({"_id": id_region})
         if region is None:
             return {"mensaje": "La región no existe"}
         region["_id"] = str(region["_id"])
         return region
     
-    def modificarRegion(self, id_region: str, region: RegionInsert):
-        id_object = ObjectId(id_region)
+    
+    def ConsulUserRegion(self, id_region: int):
+        desarrolladores = list(self.bd.ConsulUserRegion.find({"Region._id": id_region}))
+        
+        if not desarrolladores:
+            return {"mensaje": "No se encontraron desarrolladores en esa región"}
+            
+        resultado = []
+        for desarrollador in desarrolladores:
+            desarrollador["_id"] = str(desarrollador["_id"])
+            resultado.append(desarrollador)
+        
+        return resultado
+
+    
+    def modificarRegion(self, id_region: int, region: RegionInsert):
         region_dict = region.dict()
+        
         respuesta={"estatus":"","mensaje":""}
         if region:
-            res= self.bd.region.update_one({"_id": id_object},{"$set": region_dict})
+            res= self.bd.region.update_one({"_id": id_region},{"$set": region_dict})
             respuesta["estatus"]="OK"
-            respuesta["mensaje"]=f"Región con id:{id_object} actualizada correctamente"
+            respuesta["mensaje"]=f"Región con id:{id_region} actualizada correctamente"
             respuesta["Usuario"]=region
         else:
             respuesta["estatus"]="Error"
             respuesta["mensaje"]="No se realizaron cambios"
         return respuesta      
 
-    def eliminarRegion(self, id_Region: str):
-        id_object = ObjectId(id_Region)
-        resultado = self.bd.region.delete_one({"_id": id_object})
+    def eliminarRegion(self, id_Region: int):
+        resultado = self.bd.region.delete_one({"_id": id_Region})
         
         if resultado.deleted_count == 0:
             return {"mensaje": "No se encontró un favorito con ese id"}
         
         return {
-            "mensaje": f"Favorito con id:{id_object} eliminado correctamente",
+            "mensaje": f"Region con id:{id_Region} eliminado correctamente",
             "estatus": "OK"
         }
     
 #-------------------Favoritos---------------------------#
-    def agregarFavoritos(self,favoritos:FavoritosInsert):
+    def agregarFavoritos(self,favoritos:FavoritosInsert, _id:int):
         respuesta={"estatus":"","mensaje":""}
+        favoritos_dict = favoritos.dict()
+        favoritos_dict["_id"] = _id
         if favoritos:
-                    res=self.bd.favoritos.insert_one(favoritos.dict())
+                    res=self.bd.favoritos.insert_one(favoritos_dict)
                     respuesta["estatus"]="OK"
-                    respuesta["mensaje"]="Usuario agregado con id"
+                    respuesta["mensaje"]=f"favorito agregado con id: {res.inserted_id}"
                     respuesta["Usuario"]=favoritos
         else:
                     respuesta["estatus"]="Error"
@@ -71,31 +84,30 @@ class Conexion():
         return respuesta
     
     def consultarFavoritos(self, id_Favoritos: str):
-        id_object = ObjectId(id_Favoritos)
-        favoritos = self.bd.favoritos.find_one({"_id": id_object})
+        favoritos = self.bd.favoritos.find_one({"_id": id_Favoritos})
         if favoritos is None:
             return {"mensaje": "La región no existe"}
         favoritos["_id"] = str(favoritos["_id"])
         return favoritos
     
-    def modificarFavoritos(self, id_favoritos: str, favoritos: FavoritosInsert):
-        id_object = ObjectId(id_favoritos)
+    def modificarFavoritos(self, id_favoritos: int, favoritos: FavoritosInsert):
+        #id_object = ObjectId(id_favoritos)
         favoritos_dict = favoritos.dict()
         respuesta={"estatus":"","mensaje":""}
         if favoritos:
-            res= self.bd.favoritos.update_one({"_id": id_object},{"$set": favoritos_dict})
+            res= self.bd.favoritos.update_one({"_id": id_favoritos},{"$set": favoritos_dict})
             respuesta["estatus"]="OK"
-            respuesta["mensaje"]=f"favoritos con id:{id_object} actualizada correctamente"
+            respuesta["mensaje"]=f"favoritos con id:{id_favoritos} actualizada correctamente"
             respuesta["Usuario"]=favoritos
         else:
             respuesta["estatus"]="Error"
             respuesta["mensaje"]="No se realizaron cambios"
         return respuesta    
 
-    def eliminarFavoritos(self, id_Favoritos: str):
-        id_object = ObjectId(id_Favoritos)
+    def eliminarFavoritos(self, id_Favoritos: int):
+        #id_object = ObjectId(id_Favoritos)
         respuesta={"estatus":"","mensaje":""}
-        resultado = self.bd.favoritos.delete_one({"_id": id_object})
+        resultado = self.bd.favoritos.delete_one({"_id": id_Favoritos})
         
         if resultado.deleted_count == 0:
             respuesta["estatus"]="Error"
@@ -103,9 +115,13 @@ class Conexion():
         
         else :
             respuesta["estatus"]="OK"
-            respuesta["mensaje"]=f"Favorito con id:{id_object} eliminado correctamente"
+            respuesta["mensaje"]=f"Favorito con id:{id_Favoritos} eliminado correctamente"
        
         return respuesta
+    
+    def consultaGeneralFav(self ):
+         res=self.bd.favoritos.find()
+         return res
     
 #-------------------Herramientas---------------------------#
     def consultarHerramientas(self, id_Herramientas: str):
@@ -154,6 +170,18 @@ class Conexion():
             respuesta["estatus"]="OK"
             respuesta["mensaje"]=f"Herramienta con id:{id_object} eliminado correctamente"
          return respuesta
+    
+    def ConsUsuario_x_herramientas(self, nombre:str, certificaciones:certificaciones ):
+        str = str(nombre)
+        certificaciones=self.db.usuarios.find({"certificaciones.nombre": str})
+        if certificaciones is None:
+             return {"mensaje": "No se encontraron usuarios con esa herramienta"}
+        certificaciones["nombre"] = str(certificaciones["nombre"])
+        return certificaciones
+
+
+
+
 
 
     

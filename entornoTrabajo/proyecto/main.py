@@ -21,47 +21,58 @@ async def root():
     return {"message":"Bienvenido"}
 #-------------------REGION---------------------------#
 @app.post('/AgregarRegion', tags=["RegionREST"])
-def agregarRegion(region:RegionInsert):
+def agregarRegion(region:RegionInsert, _id: int):
     #return {"mensaje":"Agregando un pedido"}
-    salida=app.cn.agregarRegion(region)
+    salida=app.cn.agregarRegion(region,_id)
     return salida
 
 @app.get('/consultarRegion/{idRegion}', tags=["RegionREST"])
-def consultarRegion(idRegion: str):
+def consultarRegion(idRegion: int):
     salida = app.cn.consultarRegion(idRegion)
     return salida
 
+@app.get("/ConsulUserRegion/{id_region}", tags=["RegionREST"])
+def ConsulUserRegion(id_region: int):
+    resultado = app.cn.ConsulUserRegion(id_region)
+    return resultado
+
 @app.put("/modificarRegion/{idRegion}", tags=["RegionREST"])
-def modificarRegion(idRegion: str, region: RegionInsert):
+def modificarRegion(idRegion: int, region: RegionInsert):
     resultado = app.cn.modificarRegion(idRegion, region)
     return resultado
 
 @app.delete("/eliminarRegion/{idRegion}", tags=["RegionREST"])
-def eliminarRegion(idRegion: str):
+def eliminarRegion(idRegion: int):
     resultado = app.cn.eliminarRegion(idRegion)
     return resultado
 
 #-------------------Favoritos---------------------------#
 @app.post('/Agregarfavoritos',tags=["FavoritosREST"])
-def agregarFavoritos(favoritos:FavoritosInsert):
+def agregarFavoritos(favoritos:FavoritosInsert,_id:int):
     #return {"mensaje":"Agregando un pedido"}
-    salida=app.cn.agregarFavoritos(favoritos)
+    salida=app.cn.agregarFavoritos(favoritos,_id)
     return salida
 
+@app.get('/consultaGeneral')
+def consultaGeneralFav():
+    return app.cn.consultaGeneralFav()
+
 @app.get('/consultarFavoritos/{idFavoritos}',tags=["FavoritosREST"])
-def consultarFavoritos(idFavoritos: str):
+def consultarFavoritos(idFavoritos: int):
     salida = app.cn.consultarFavoritos(idFavoritos)
     return salida
 
 @app.put("/modificarFavoritos/{idFavoritos}", tags=["FavoritosREST"])
-def modificarFavoritos(idFavoritos: str, favoritos: FavoritosInsert):
+def modificarFavoritos(idFavoritos: int, favoritos: FavoritosInsert):
     resultado = app.cn.modificarFavoritos(idFavoritos, favoritos)
     return resultado
 
 @app.delete("/eliminarFavoritos/{idFavoritos}", tags=["FavoritosREST"])
-def eliminarFavoritos(idFavoritos: str):
+def eliminarFavoritos(idFavoritos: int):
     resultado = app.cn.eliminarFavoritos(idFavoritos)
     return resultado
+
+
 #-------------------Herramientas---------------------------#
 @app.post('/AgregarHerramientas', tags=["HerramientasREST"])
 def agregarHerramientas(herramientas:HerramientasInsert):
@@ -80,8 +91,11 @@ def modificarHerramientas(idHerramientas: str, herramientas: HerramientasInsert)
 def eliminarHerramientas(idHerramientas: str):
     resultado = app.cn.eliminarHerramientas(idHerramientas)
     return resultado
-
+@app.get("/ConsUsuario_x_herramientas/{nombre}")
+def ConsUsuario_x_herramientas(nombre:str):
+    resultado = app.cn.ConsUsuario_x_herramientas(nombre)
+    return resultado
 
 
 if __name__ == '__main__':
-    uvicorn.run("main:app",port=5500,reload=True)
+    uvicorn.run("main:app",port=8000,reload=True)
