@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from models import UsuarioInsert, UsuarioInactivo, AgregarHerramienta, Herramienta1, Usuario, UsuarioUpdate
+from models import Herramienta, UsuarioInsert, UsuarioInactivo, Herramienta1, Usuario, UsuarioUpdate, RegionInsert, HerramientasInsert, FavoritosInsert
 from datetime import datetime
 from bson import ObjectId
 
@@ -47,6 +47,10 @@ class Conexion():
             resp["mensaje"]="El usuario no se ha cancelado."
         return  resp
     
+    #AL CONSULTAR POR HERRAMIENTA NO SE MUESTRAN TODAS LAS HERRAMIENTAS CREADAS
+    #COMO SE MANDA LLAMAR DE UNA CONSULTAGENERAL
+    #
+    
     # def comprobarUsuario(self,idUsuario):
     #     if isinstance(idUsuario, int):
     #         filtro = {"_id": idUsuario, "estatus": 'A'}
@@ -80,7 +84,7 @@ class Conexion():
     #         resp["mensaje"] = "El usuario no se ha cancelado."
     #     return resp
 
-#3.1MODIFICAR USUARIO 
+#3.1 MODIFICAR USUARIO 
     def comprobarUsuario2(self,idUsuario):
         usuario=self.bd.desarrollador.find_one({"_id":ObjectId(idUsuario),
                                          "$or": [{"estatus": "INACTIVO"}, {"estatus": "A"}]})
@@ -106,57 +110,214 @@ class Conexion():
             resp["mensaje"]="El usuario no se ha modificado ."
         return  resp
 
-#3  MODIFICAR USAURIO POR HERRMIENTA
-    def comprobarUsuario1(self,idUsuario):
-        usuario=self.bd.desarrollador.find_one({"_id":int(idUsuario),
+#3  MODIFICAR USAURIO POR HERRAMIENTA
+    def comprobarUsuario1(self,idUsuario,idHerramienta):
+        usuario=self.bd.desarrollador.find_one({"_id": ObjectId(idUsuario),
                                          "$or": [{"estatus": "INACTIVO"}, {"estatus": "A"}]})
-        return usuario
+        if usuario:
+                cont1 = self.bd.desarrollador.herramienta.count_documents(
+                                {"idUsuario": ObjectId(idUsuario),
+                                 "herramientas": {
+                                 "$elemMatch": {"_id": int(idHerramienta)}
+                                                 }
+                                }                                                           
+                                                                         )
+                return cont1
+        else:
+                return None
     
     def comprobarHerramienta(self,idHerramienta):
         cont=self.bd.herramientas.count_documents({"_id":idHerramienta})
         return cont
     
-    def agregarHerramientaUsuario(self,idUsuario,idHerramienta,herramienta:AgregarHerramienta):
-        user=self.comprobarUsuario1(idUsuario)
+    def agregarHerramientaUsuario(self,idUsuario,idHerramienta,herramienta:Herramienta):
+        cont1=self.comprobarUsuario1(idUsuario,idHerramienta)
         resp={"estatus":"","mensaje":""}
-        if user:
+        if cont1<0:
                 cont=self.comprobarHerramienta(idHerramienta)
                 if cont>0:
-                    res=self.bd.desarrollador.update_one({"_id": int(idUsuario)},
+                    self.bd.desarrollador.update_one({"_id": ObjectId(idUsuario)},
                                                          {"$push": {"herramienta": herramienta.dict()}}
                                                         )
                     resp["estatus"]="OK"
                     resp["mensaje"]=f'Se agregó una herramienta id:{idHerramienta} al usuario id:{idUsuario} con éxito.'
                 else:
                         resp["estatus"]="Error"
-                        resp["mensaje"]=f'No se agregó una herramienta al usuario id:{idUsuario} con éxito.'
+                        resp["mensaje"]=f'No se agregó una herramienta al usuario id:{idUsuario} con éxito. Por que no existe la Herramienta'
         else:
                 resp["estatus"]="Error"
-                resp["mensaje"]='No existe la Herramienta.'
+                resp["mensaje"]='El usuario ya cuenta con la Herramienta agregada'
         return resp
     
 #4  CONSULTA DE USUARIOS POR HERRAMIENTA
-    def consultaGeneralHerramientas(self):
-        resp={"estatus":"","mensaje":""}
-        resp["estatus"]="OK"
-        resp["mensaje"]="Listado de Usuarios con su Herramienta"
-        usuarios = []
-        for usuario_doc in self.bd.desarrollador.find():
-            usuario = Usuario(**usuario_doc)
-            herramientas_usuario = []
-        for herramienta in usuario.herramientas:
-            herramienta_doc = self.bd.herramientas.find_one({"_id": herramienta.idHerramienta})
-            if herramienta_doc:
-                herramientas_usuario.append(Herramienta1(**herramienta_doc))
-        usuario.herramientas = herramientas_usuario
-        usuarios.append(usuario)
-        return usuarios
+    def convert_objectid(self, cursor):
+        result = []
+        for doc in cursor:
+            doc['_id'] = str(doc['_id'])
+            result.append(doc)
+        return result
 
-    def consultarHerramienta(self,idHerramienta):
-        herramienta=self.bd.productos.find_one({"_id":idHerramienta})
-        return herramienta
+    def consultaGeneralHerramientas(self,idUsuario:str):
+        herramientas=self.bd.consultaHerramienta.find({"_id":ObjectId(idUsuario)})
+        usuario = None
+        for herramienta in herramientas:
+            if usuario is None:
+                usuario = {
+                    "_id": str(herramienta["_id"]),
+                    "nombre": herramienta["nombre"],
+                    "apellido_pat": herramienta["apellido_pat"],
+                    "apellido_mat": herramienta["apellido_mat"],
+                    "herramientas": []
+                }
+            herramienta_info = herramienta.pop("herramienta1")
+            usuario["herramientas"].append(herramienta_info)
 
-    def complementarHerramienta(self,herramienta):
-        herr=self.consultarHerramienta(herramienta['_id'])
-        herramienta['nombre']=herr['nombre']
-        return herramienta
+        return usuario 
+    
+############### MOISES VERDUZCO
+
+#-------------------REGION---------------------------#
+    def agregarRegion(self,region:RegionInsert):
+        respuesta={"estatus":"","mensaje":""}
+        if region:
+                    res=self.bd.region.insert_one(region.dict())
+                    respuesta["estatus"]="OK"
+                    respuesta["mensaje"]="Usuario agregado con id"
+                    respuesta["Usuario"]=region
+        else:
+                    respuesta["estatus"]="Error"
+                    respuesta["mensaje"]="El Usuario no se agregó"
+        return respuesta
+
+    def consultarRegion(self, id_region: str):
+        id_object = ObjectId(id_region)
+        region = self.bd.region.find_one({"_id": id_object})
+        if region is None:
+            return {"mensaje": "La región no existe"}
+        region["_id"] = str(region["_id"])
+        return region
+
+    def modificarRegion(self, id_region: str, region: RegionInsert):
+        id_object = ObjectId(id_region)
+        region_dict = region.dict()
+        respuesta={"estatus":"","mensaje":""}
+        if region:
+            res= self.bd.region.update_one({"_id": id_object},{"$set": region_dict})
+            respuesta["estatus"]="OK"
+            respuesta["mensaje"]=f"Región con id:{id_object} actualizada correctamente"
+            respuesta["Usuario"]=region
+        else:
+            respuesta["estatus"]="Error"
+            respuesta["mensaje"]="No se realizaron cambios"
+        return respuesta      
+
+    def eliminarRegion(self, id_Region: str):
+        id_object = ObjectId(id_Region)
+        resultado = self.bd.region.delete_one({"_id": id_object})
+
+        if resultado.deleted_count == 0:
+            return {"mensaje": "No se encontró un favorito con ese id"}
+
+        return {
+            "mensaje": f"Favorito con id:{id_object} eliminado correctamente",
+            "estatus": "OK"
+        }
+
+#-------------------Favoritos---------------------------#
+    def agregarFavoritos(self,favoritos:FavoritosInsert):
+        respuesta={"estatus":"","mensaje":""}
+        if favoritos:
+                    res=self.bd.favoritos.insert_one(favoritos.dict())
+                    respuesta["estatus"]="OK"
+                    respuesta["mensaje"]="Usuario agregado con id"
+                    respuesta["Usuario"]=favoritos
+        else:
+                    respuesta["estatus"]="Error"
+                    respuesta["mensaje"]="El Usuario no se agregó"
+        return respuesta
+
+    def consultarFavoritos(self, id_Favoritos: str):
+        id_object = ObjectId(id_Favoritos)
+        favoritos = self.bd.favoritos.find_one({"_id": id_object})
+        if favoritos is None:
+            return {"mensaje": "La región no existe"}
+        favoritos["_id"] = str(favoritos["_id"])
+        return favoritos
+
+    def modificarFavoritos(self, id_favoritos: str, favoritos: FavoritosInsert):
+        id_object = ObjectId(id_favoritos)
+        favoritos_dict = favoritos.dict()
+        respuesta={"estatus":"","mensaje":""}
+        if favoritos:
+            res= self.bd.favoritos.update_one({"_id": id_object},{"$set": favoritos_dict})
+            respuesta["estatus"]="OK"
+            respuesta["mensaje"]=f"favoritos con id:{id_object} actualizada correctamente"
+            respuesta["Usuario"]=favoritos
+        else:
+            respuesta["estatus"]="Error"
+            respuesta["mensaje"]="No se realizaron cambios"
+        return respuesta    
+
+    def eliminarFavoritos(self, id_Favoritos: str):
+        id_object = ObjectId(id_Favoritos)
+        respuesta={"estatus":"","mensaje":""}
+        resultado = self.bd.favoritos.delete_one({"_id": id_object})
+
+        if resultado.deleted_count == 0:
+            respuesta["estatus"]="Error"
+            respuesta["mensaje"]="No se encontró un favorito con ese id"
+
+        else :
+            respuesta["estatus"]="OK"
+            respuesta["mensaje"]=f"Favorito con id:{id_object} eliminado correctamente"
+
+        return respuesta
+
+#-------------------Herramientas---------------------------#
+    # def consultarHerramientas(self, id_Herramientas: str):
+    #      id_object = ObjectId(id_Herramientas)
+    #      herramientas = self.bd.herramientas.find_one({"_id": id_object})
+    #      if herramientas is None:
+    #           return {"mensaje": "La herramienta no existe"}
+    #      herramientas["_id"] = str(herramientas["_id"])
+    #      return herramientas
+
+    # def agregarHerramientas(self, herramientas: HerramientasInsert):
+    #      respuesta={"estatus":"","mensaje":""}
+    #      if herramientas:
+    #           res= self.bd.herramientas.insert_one(herramientas.dict())
+    #           respuesta["estatus"]="OK"
+    #           respuesta["mensaje"]=f"Herramienta con id:{res.inserted_id} agregada correctamente"
+    #           respuesta["Usuario"]=herramientas
+    #      else:
+    #           respuesta["estatus"]="Error"
+    #           respuesta["mensaje"]="No se realizaron cambios"
+    #      return respuesta
+
+    # def modificarHerramientas(self, id_herramientas: str, herramientas: HerramientasInsert):
+    #      id_object = ObjectId(id_herramientas)
+    #      herramientas_dict = herramientas.dict()
+    #      herramientas_dict["_id"] = id_object
+    #      respuesta={"estatus":"","mensaje":""}
+    #      res= self.bd.herramientas.update_one({"_id": id_object},{"$set": herramientas_dict})
+    #      if res.modified_count == 0:
+    #           respuesta["estatus"]="Error"
+    #           respuesta["mensaje"]="No se realizaron cambios"
+    #      else:
+    #           respuesta["estatus"]="OK"
+    #           respuesta["mensaje"]=f"Herramienta con id:{id_object} modificada correctamente"
+    #           respuesta["Usuario"]=herramientas
+    #      return respuesta
+
+    # def eliminarHerramientas(self, id_herramientas: str):
+    #      id_object = ObjectId(id_herramientas)
+    #      respuesta={"estatus":"","mensaje":""}
+    #      res= self.bd.herramientas.delete_one({"_id": id_object})
+    #      if res.deleted_count == 0:
+    #           respuesta["estatus"]="Error"
+    #           respuesta["mensaje"]="No se encontró una herramienta con ese id"
+    #      else:
+    #         respuesta["estatus"]="OK"
+    #         respuesta["mensaje"]=f"Herramienta con id:{id_object} eliminado correctamente"
+    #      return respuesta
+    

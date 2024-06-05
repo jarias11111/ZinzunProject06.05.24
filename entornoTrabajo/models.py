@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
+from bson import ObjectId
 
 #1
 class UsuarioInsert(BaseModel):
@@ -40,9 +41,6 @@ class Herramienta(BaseModel):
     nivel:str
     fecha:datetime=Field(default=datetime.now())
 
-class AgregarHerramienta(BaseModel):
-    herramienta:Herramienta
-
 #4
 class Herramienta1(BaseModel):
     idHerramienta:int
@@ -70,3 +68,24 @@ class Usuario(BaseModel):
     num_ext: str
     CP: int
     herramientas:list[Herramienta1] | None=None
+
+
+    ################################## MOISES VERDUZCO
+
+class RegionInsert(BaseModel):
+    pais: str
+    estado: str
+    ciudad: str
+
+class FavoritosInsert(BaseModel):
+    id_usuarioDesarrollador: int
+    id_usuarioEmpleador: int
+    calificacion: int
+    comentarios: str
+
+class HerramientasInsert(BaseModel):
+    nombre : str
+    fabricante: str
+    version: str
+    descripcion: str
+    tipo: str
