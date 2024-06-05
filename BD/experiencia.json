@@ -1,0 +1,15 @@
+{
+  "id_experiencia": "Objetid()",
+  "id_desarroador": "ref(desarrollador.id_usuario)",
+  "puesto": "String",
+  "empresa": "String",
+  "periodo": "String",
+  "proyectos": [
+    {
+      "nombre": "String",
+      "tecnologias": ["String"],
+      "objetivo": "String",
+      "responsabilidades": ["String"]
+    }
+  ]
+}

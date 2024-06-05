@@ -1,0 +1,8 @@
+{
+  "id_herramienta": "Objetid()",
+  "nombre": "String",
+  "fabricante": "String",
+  "version": "String",
+  "descripcion": "String",
+  "nivel": "String"
+}
